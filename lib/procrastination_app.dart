@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'chart_screen.dart';
 import 'about_screen.dart';
 import 'task_screen.dart';
-import 'package:flutter/services.dart';
 
 void main() {
   runApp(ProcrastinationApp());
@@ -88,10 +87,36 @@ class PomodoroTimer extends StatefulWidget {
 }
 
 class _PomodoroTimerState extends State<PomodoroTimer> {
-  int _minutes = 25;
-  int _seconds = 0; // Para testes, altere para 1500 (25 minutos)
+  int _minutes = 0;
+  int _seconds = 0;
   bool _isActive = false;
   late Timer _timer;
+  TextEditingController _minutesController = TextEditingController();
+  TextEditingController _secondsController = TextEditingController();
+
+  void _startTimerFromInput() {
+    int minutes = int.tryParse(_minutesController.text) ?? 0;
+    int seconds = int.tryParse(_secondsController.text) ?? 0;
+
+    setState(() {
+      _minutes = minutes;
+      _seconds = seconds;
+    });
+
+    _startTimer();
+  }
+
+  void _resetTimer() {
+    _timer.cancel();
+    _isActive = false;
+    _minutesController.clear();
+    _secondsController.clear();
+
+    setState(() {
+      _minutes = 0;
+      _seconds = 0;
+    });
+  }
 
   void _startTimer() {
     if (!_isActive) {
@@ -115,47 +140,10 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
     }
   }
 
-  void _resetTimer() {
-    _timer.cancel();
-    _isActive = false;
-    setState(() {
-      _minutes = 25;
-      _seconds = 0;
-    });
-  }
-
   @override
   void dispose() {
     _timer.cancel();
     super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        Text(
-          '$_minutes:${_seconds.toString().padLeft(2, '0')}',
-          style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
-        ),
-        SizedBox(height: 20),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            ElevatedButton(
-              onPressed: _isActive ? null : _startTimer,
-              child: Text('Começar'),
-            ),
-            SizedBox(width: 20),
-            ElevatedButton(
-              onPressed: _resetTimer,
-              child: Text('Resetar'),
-            ),
-          ],
-        ),
-      ],
-    );
   }
 
   void _showEndDialog(BuildContext context) {
@@ -163,8 +151,8 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Tempo esgotado'),
-          content: Text('O cronômetro Pomodoro terminou.'),
+          title: Text('Tempo Acabou!'),
+          content: Text('Cronometro pomodoro foi finalizado'),
           actions: <Widget>[
             TextButton(
               onPressed: () {
@@ -177,13 +165,61 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
       },
     );
   }
-}
 
-class BatteryInfoPlatform {
-  static const MethodChannel _channel = MethodChannel('battery_info');
-
-  Future<int> getBatteryLevel() async {
-    final int batteryLevel = await _channel.invokeMethod('getBatteryLevel');
-    return batteryLevel;
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            SizedBox(
+              width: 80,
+              child: TextField(
+                controller: _minutesController,
+                keyboardType: TextInputType.number,
+                textAlign: TextAlign.center,
+                decoration: InputDecoration(
+                  labelText: 'Minutos',
+                ),
+              ),
+            ),
+            SizedBox(width: 20),
+            SizedBox(
+              width: 80,
+              child: TextField(
+                controller: _secondsController,
+                keyboardType: TextInputType.number,
+                textAlign: TextAlign.center,
+                decoration: InputDecoration(
+                  labelText: 'Segundos',
+                ),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 20),
+        Text(
+          '$_minutes:${_seconds.toString().padLeft(2, '0')}',
+          style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(height: 20),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            ElevatedButton(
+              onPressed: _isActive ? null : () => _startTimerFromInput(),
+              child: Text('Começar'),
+            ),
+            SizedBox(width: 20),
+            ElevatedButton(
+              onPressed: _resetTimer,
+              child: Text('Resetar'),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 }

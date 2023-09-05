@@ -20,7 +20,7 @@ class AboutScreen extends StatelessWidget {
             ),
             SizedBox(height: 10),
             Text(
-              'Um aplicativo para ajudar no gerenciamento do tempo e tarefas.',
+              'Um aplicativo de combate à procrastinação tem como objetivo ajudar os usuários a tomar medidas concretas para superar a procrastinação, gerenciar melhor seu tempo e aumentar sua produtividade. Ele combina recursos de rastreamento, gerenciamento de tempo e motivação para ajudar os usuários a se manterem no caminho certo e atingir seus objetivos.',
               style: TextStyle(fontSize: 16),
             ),
             SizedBox(height: 10),
@@ -30,7 +30,7 @@ class AboutScreen extends StatelessWidget {
             ),
             SizedBox(height: 10),
             Text(
-              'Versão: 0.3',
+              'Versão: 0.4',
               style: TextStyle(fontSize: 16),
             ),
           ],

@@ -1,7 +1,11 @@
-// ignore_for_file: unnecessary_null_comparison
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+class Task {
+  String name;
+
+  Task(this.name);
+}
 
 class TasksScreen extends StatefulWidget {
   @override
@@ -9,8 +13,15 @@ class TasksScreen extends StatefulWidget {
 }
 
 class _TasksScreenState extends State<TasksScreen> {
-  List<String> tasks = [];
+  List<Task> tasks = [];
   late SharedPreferences prefs;
+  TextEditingController taskNameController = TextEditingController();
+  TextEditingController editTaskNameController =
+      TextEditingController(); // New controller for editing
+  TextEditingController searchController =
+      TextEditingController(); // Search bar controller
+  int editingTaskIndex =
+      -1; // Index of the task being edited, initialized with -1
 
   @override
   void initState() {
@@ -23,17 +34,19 @@ class _TasksScreenState extends State<TasksScreen> {
     loadTasks();
   }
 
-  void addTask(String task) {
+  void addTask(String taskName) {
     setState(() {
-      tasks.add(task);
+      tasks.add(Task(taskName));
       saveTasks();
+      taskNameController.clear();
     });
   }
 
-  void editTask(int index, String newTask) {
+  void editTask(int index, String newTaskName) {
     setState(() {
-      tasks[index] = newTask;
+      tasks[index].name = newTaskName;
       saveTasks();
+      editingTaskIndex = -1; // End editing
     });
   }
 
@@ -47,16 +60,26 @@ class _TasksScreenState extends State<TasksScreen> {
   void loadTasks() {
     List<String> savedTasks = prefs.getStringList('tasks') ?? [];
     setState(() {
-      tasks = savedTasks;
+      tasks = savedTasks.map((taskName) => Task(taskName)).toList();
     });
   }
 
   void saveTasks() {
-    prefs.setStringList('tasks', tasks);
+    prefs.setStringList('tasks', tasks.map((task) => task.name).toList());
+  }
+
+  List<Task> filterTasks(String keyword) {
+    return tasks
+        .where(
+            (task) => task.name.toLowerCase().contains(keyword.toLowerCase()))
+        .toList();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Get the filtered tasks based on the search keyword
+    List<Task> filteredTasks = filterTasks(searchController.text);
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Tarefas'),
@@ -66,50 +89,50 @@ class _TasksScreenState extends State<TasksScreen> {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Text(
-              'Quantidade de Tarefas: ${tasks.length}',
+              'Número de Tarefas: ${filteredTasks.length}', // Display the count of filtered tasks
               style: TextStyle(fontSize: 16),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              controller: searchController,
+              decoration: InputDecoration(
+                labelText: 'Buscar Tarefas',
+                prefixIcon: Icon(Icons.search),
+              ),
+              onChanged: (value) {
+                setState(() {}); // Update the view when search text changes
+              },
             ),
           ),
           Expanded(
             child: ListView.builder(
-              itemCount: tasks.length,
+              itemCount:
+                  filteredTasks.length, // Use the size of the filtered list
               itemBuilder: (context, index) {
                 return ListTile(
-                  title: Text(tasks[index]),
+                  title: editingTaskIndex == index
+                      ? TextField(
+                          controller: editTaskNameController,
+                          decoration: InputDecoration(
+                            labelText: 'Editar Tarefa',
+                          ),
+                        )
+                      : Text(
+                          filteredTasks[index].name), // Display filtered tasks
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // Edit icon
                       IconButton(
                         icon: Icon(Icons.edit),
-                        onPressed: () async {
-                          String editedTask = await showDialog(
-                            context: context,
-                            builder: (context) {
-                              String editedTaskName = tasks[index];
-                              return AlertDialog(
-                                title: Text('Editar Tarefa'),
-                                content: TextField(
-                                  onChanged: (value) {
-                                    editedTaskName = value;
-                                  },
-                                  controller:
-                                      TextEditingController(text: tasks[index]),
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.pop(context, editedTaskName);
-                                    },
-                                    child: Text('Salvar'),
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-
-                          if (editedTask != null && editedTask.isNotEmpty) {
-                            editTask(index, editedTask);
-                          }
+                        onPressed: () {
+                          setState(() {
+                            editingTaskIndex = index;
+                            editTaskNameController.text =
+                                filteredTasks[index].name;
+                          });
                         },
                       ),
                       IconButton(
@@ -118,6 +141,14 @@ class _TasksScreenState extends State<TasksScreen> {
                           removeTask(index);
                         },
                       ),
+                      // Save edit button
+                      if (editingTaskIndex == index)
+                        IconButton(
+                          icon: Icon(Icons.save),
+                          onPressed: () {
+                            editTask(index, editTaskNameController.text);
+                          },
+                        ),
                     ],
                   ),
                 );
@@ -128,21 +159,29 @@ class _TasksScreenState extends State<TasksScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          String newTask = await showDialog(
+          await showDialog(
             context: context,
             builder: (context) {
-              String taskName = '';
               return AlertDialog(
                 title: Text('Adicionar Tarefa'),
                 content: TextField(
-                  onChanged: (value) {
-                    taskName = value;
-                  },
+                  controller: taskNameController,
+                  decoration: InputDecoration(labelText: 'Nome da Tarefa:'),
                 ),
                 actions: [
                   TextButton(
                     onPressed: () {
-                      Navigator.pop(context, taskName);
+                      Navigator.of(context).pop();
+                    },
+                    child: Text('Cancelar'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      String taskName = taskNameController.text;
+                      if (taskName.isNotEmpty) {
+                        addTask(taskName);
+                        Navigator.of(context).pop();
+                      }
                     },
                     child: Text('Adicionar'),
                   ),
@@ -150,13 +189,15 @@ class _TasksScreenState extends State<TasksScreen> {
               );
             },
           );
-
-          if (newTask != null && newTask.isNotEmpty) {
-            addTask(newTask);
-          }
         },
         child: Icon(Icons.add),
       ),
     );
   }
+}
+
+void main() {
+  runApp(MaterialApp(
+    home: TasksScreen(),
+  ));
 }
