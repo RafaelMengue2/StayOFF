@@ -16,12 +16,9 @@ class _TasksScreenState extends State<TasksScreen> {
   List<Task> tasks = [];
   late SharedPreferences prefs;
   TextEditingController taskNameController = TextEditingController();
-  TextEditingController editTaskNameController =
-      TextEditingController(); // New controller for editing
-  TextEditingController searchController =
-      TextEditingController(); // Search bar controller
-  int editingTaskIndex =
-      -1; // Index of the task being edited, initialized with -1
+  TextEditingController editTaskNameController = TextEditingController();
+  TextEditingController searchController = TextEditingController();
+  int editingTaskIndex = -1;
 
   @override
   void initState() {
@@ -46,7 +43,7 @@ class _TasksScreenState extends State<TasksScreen> {
     setState(() {
       tasks[index].name = newTaskName;
       saveTasks();
-      editingTaskIndex = -1; // End editing
+      editingTaskIndex = -1;
     });
   }
 
@@ -77,19 +74,15 @@ class _TasksScreenState extends State<TasksScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Get the filtered tasks based on the search keyword
     List<Task> filteredTasks = filterTasks(searchController.text);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Tarefas'),
-      ),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Text(
-              'Número de Tarefas: ${filteredTasks.length}', // Display the count of filtered tasks
+              'Número de Tarefas: ${filteredTasks.length}',
               style: TextStyle(fontSize: 16),
             ),
           ),
@@ -102,14 +95,13 @@ class _TasksScreenState extends State<TasksScreen> {
                 prefixIcon: Icon(Icons.search),
               ),
               onChanged: (value) {
-                setState(() {}); // Update the view when search text changes
+                setState(() {});
               },
             ),
           ),
           Expanded(
             child: ListView.builder(
-              itemCount:
-                  filteredTasks.length, // Use the size of the filtered list
+              itemCount: filteredTasks.length,
               itemBuilder: (context, index) {
                 return ListTile(
                   title: editingTaskIndex == index
@@ -119,8 +111,7 @@ class _TasksScreenState extends State<TasksScreen> {
                             labelText: 'Editar Tarefa',
                           ),
                         )
-                      : Text(
-                          filteredTasks[index].name), // Display filtered tasks
+                      : Text(filteredTasks[index].name),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -141,7 +132,6 @@ class _TasksScreenState extends State<TasksScreen> {
                           removeTask(index);
                         },
                       ),
-                      // Save edit button
                       if (editingTaskIndex == index)
                         IconButton(
                           icon: Icon(Icons.save),
