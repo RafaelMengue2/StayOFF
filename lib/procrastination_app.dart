@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'chart_screen.dart';
 import 'about_screen.dart';
 import 'task_screen.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 void main() {
   runApp(ProcrastinationApp());
@@ -59,10 +60,17 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Tarefas',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.info),
-            label: 'Sobre',
+            icon: Icon(Icons.settings),
+            label: 'Configurações',
           ),
         ],
+        selectedItemColor: Colors.white, // Cor do ícone selecionado
+        unselectedItemColor: Colors.grey, // Cor do ícone não selecionado
+        backgroundColor: Colors.red, // Cor de fundo da barra de navegação
+        selectedFontSize: 18, // Tamanho da fonte do item selecionado
+        unselectedFontSize: 14, // Tamanho da fonte do item não selecionado
+        type: BottomNavigationBarType
+            .fixed, // Para garantir que os rótulos sejam exibidos
       ),
     );
   }
@@ -93,6 +101,12 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
   void _startTimerFromInput() {
     int minutes = int.tryParse(_minutesController.text) ?? 0;
     int seconds = int.tryParse(_secondsController.text) ?? 0;
+
+    if (seconds >= 60) {
+      int extraMinutes = seconds ~/ 60;
+      minutes += extraMinutes;
+      seconds %= 60;
+    }
 
     setState(() {
       _minutes = minutes;
