@@ -43,7 +43,7 @@ class _NoteScreenState extends State<NoteScreen> {
                 );
                 setState(() {});
               },
-              child: Text('Salvar Nota'),
+              child: Text('Salvar A Nota'),
             ),
             SizedBox(height: 16),
             Text(
