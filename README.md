@@ -8,7 +8,9 @@ O aplicativo possui as seguintes funcionalidades principais:
 
 1. **Temporizador Pomodoro:** O aplicativo oferece um temporizador configurável que alterna automaticamente entre períodos de foco (geralmente 25 minutos) e intervalos curtos de descanso (geralmente 5 minutos).
 
-2. **Registro de Atividades:** Mantém um registro das sessões de trabalho concluídas, para que você possa acompanhar seu histórico de produtividade ao longo do tempo.
+2. **Intervalos Personalizáveis:** Além dos pomodoros de 25 minutos, os usuários podem configurar os intervalos de descanso personalizados, de acordo com o que desejar.
+
+3. **Registro de Atividades:** Mantém um registro das sessões de trabalho concluídas, para que você possa acompanhar seu histórico de produtividade ao longo do tempo.
 
 ## Como Usar
 
