@@ -60,7 +60,7 @@ class _AboutScreenState extends State<AboutScreen> {
                     ),
                     SizedBox(height: 10),
                     Text(
-                      'Versão: 0.4',
+                      'Versão: 0.6',
                       style: TextStyle(fontSize: 16),
                     ),
                   ],

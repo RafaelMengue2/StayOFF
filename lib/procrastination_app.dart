@@ -2,7 +2,7 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'chart_screen.dart';
+import 'note_screen.dart';
 import 'about_screen.dart';
 import 'task_screen.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -15,7 +15,6 @@ class ProcrastinationApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'StayOFF',
       theme: ThemeData(primarySwatch: Colors.red),
       debugShowCheckedModeBanner: false,
       home: HomeScreen(),
@@ -34,6 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
     HomeContent(),
     TasksScreen(),
     AboutScreen(),
+    NoteScreen()
   ];
 
   @override
@@ -60,8 +60,12 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Tarefas',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Configurações',
+            icon: Icon(Icons.add),
+            label: 'Mais',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.note),
+            label: 'Notas',
           ),
         ],
         selectedItemColor: Colors.white, // Cor do ícone selecionado
