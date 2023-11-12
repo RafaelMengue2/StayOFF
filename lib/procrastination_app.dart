@@ -1,11 +1,9 @@
-// ignore_for_file: unused_import
-
 import 'dart:async';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'note_screen.dart';
 import 'about_screen.dart';
 import 'task_screen.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 void main() {
   runApp(ProcrastinationApp());
@@ -15,7 +13,10 @@ class ProcrastinationApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: ThemeData(primarySwatch: Colors.red),
+      theme: ThemeData(
+        primarySwatch: Colors.red,
+        fontFamily: 'Roboto',
+      ),
       debugShowCheckedModeBanner: false,
       home: HomeScreen(),
     );
@@ -33,17 +34,13 @@ class _HomeScreenState extends State<HomeScreen> {
     HomeContent(),
     TasksScreen(),
     AboutScreen(),
-    NoteScreen()
+    NoteScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('StayOFF'),
-      ),
-      body: _screens[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
+    return CupertinoTabScaffold(
+      tabBar: CupertinoTabBar(
         currentIndex: _currentIndex,
         onTap: (index) {
           setState(() {
@@ -52,30 +49,43 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
+            icon: Icon(CupertinoIcons.home),
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.assignment),
+            icon: Icon(CupertinoIcons.square_list),
             label: 'Tarefas',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.add),
+            icon: Icon(CupertinoIcons.add),
             label: 'Mais',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.note),
+            icon: Icon(CupertinoIcons.book),
             label: 'Notas',
           ),
         ],
-        selectedItemColor: Colors.white, // Cor do ícone selecionado
-        unselectedItemColor: Colors.grey, // Cor do ícone não selecionado
-        backgroundColor: Colors.red, // Cor de fundo da barra de navegação
-        selectedFontSize: 18, // Tamanho da fonte do item selecionado
-        unselectedFontSize: 14, // Tamanho da fonte do item não selecionado
-        type: BottomNavigationBarType
-            .fixed, // Para garantir que os rótulos sejam exibidos
+        activeColor: Colors.red,
       ),
+      tabBuilder: (context, index) {
+        return CupertinoTabView(
+          builder: (context) {
+            return CupertinoPageScaffold(
+              backgroundColor: Colors.transparent,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.red, Colors.orange],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: _screens[index],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
@@ -83,8 +93,17 @@ class _HomeScreenState extends State<HomeScreen> {
 class HomeContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: PomodoroTimer(),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.red, Colors.orange],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Center(
+        child: PomodoroTimer(),
+      ),
     );
   }
 }
@@ -94,13 +113,27 @@ class PomodoroTimer extends StatefulWidget {
   _PomodoroTimerState createState() => _PomodoroTimerState();
 }
 
-class _PomodoroTimerState extends State<PomodoroTimer> {
+class _PomodoroTimerState extends State<PomodoroTimer>
+    with SingleTickerProviderStateMixin {
   int _minutes = 0;
   int _seconds = 0;
   bool _isActive = false;
   late Timer _timer;
   TextEditingController _minutesController = TextEditingController();
   TextEditingController _secondsController = TextEditingController();
+
+  late AnimationController _animationController;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: Duration(seconds: _seconds + _minutes * 60),
+    );
+    _animation = Tween<double>(begin: 1, end: 0).animate(_animationController);
+  }
 
   void _startTimerFromInput() {
     int minutes = int.tryParse(_minutesController.text) ?? 0;
@@ -122,6 +155,7 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
 
   void _resetTimer() {
     _timer.cancel();
+    _animationController.stop();
     _isActive = false;
     _minutesController.clear();
     _secondsController.clear();
@@ -135,6 +169,10 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
   void _startTimer() {
     if (!_isActive) {
       _isActive = true;
+      _animationController.reset();
+      _animationController.duration = Duration(seconds: _seconds + _minutes * 60);
+      _animationController.forward();
+
       _timer = Timer.periodic(Duration(seconds: 1), (timer) {
         if (_minutes == 0 && _seconds == 0) {
           _timer.cancel();
@@ -154,19 +192,13 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
     }
   }
 
-  @override
-  void dispose() {
-    _timer.cancel();
-    super.dispose();
-  }
-
   void _showEndDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: Text('Tempo Acabou!'),
-          content: Text('Cronometro pomodoro foi finalizado'),
+          content: Text('Cronômetro Pomodoro foi finalizado'),
           actions: <Widget>[
             TextButton(
               onPressed: () {
@@ -181,71 +213,90 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
   }
 
   @override
+  void dispose() {
+    _timer.cancel();
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
+        AnimatedBuilder(
+          animation: _animationController,
+          builder: (context, child) {
+            return Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  height: 200,
+                  width: 200,
+                  child: CircularProgressIndicator(
+                    value: _animation.value,
+                    color: Colors.white,
+                    strokeWidth: 15,
+                  ),
+                ),
+                Center(
+                  child: Text(
+                    '$_minutes:${_seconds.toString().padLeft(2, '0')}',
+                    style: TextStyle(
+                      fontSize: 50,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+        SizedBox(height: 20),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             SizedBox(
-              width: 80,
-              child: TextField(
+              width: 100,
+              child: CupertinoTextField(
                 controller: _minutesController,
                 keyboardType: TextInputType.number,
                 textAlign: TextAlign.center,
-                decoration: InputDecoration(
-                  labelText: 'Minutos',
-                ),
+                placeholder: 'Minutos',
+                style: TextStyle(color: Colors.white),
+                placeholderStyle: TextStyle(color: Colors.white),
+                decoration: null,
               ),
             ),
-            SizedBox(width: 20),
+            SizedBox(width: 50),
             SizedBox(
-              width: 80,
-              child: TextField(
+              width: 100,
+              child: CupertinoTextField(
                 controller: _secondsController,
                 keyboardType: TextInputType.number,
-                textAlign: TextAlign.center,
-                decoration: InputDecoration(
-                  labelText: 'Segundos',
-                ),
+                placeholder: 'Segundos',
+                style: TextStyle(color: Colors.white),
+                placeholderStyle: TextStyle(color: Colors.white),
+                decoration: null,
               ),
             ),
           ],
         ),
-        SizedBox(height: 20),
-        Text(
-          '$_minutes:${_seconds.toString().padLeft(2, '0')}',
-          style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
-        ),
-        SizedBox(height: 20),
+        SizedBox(height: 10),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            TextButton(
+            CupertinoButton(
+              child: Icon(Icons.play_arrow, color: Colors.white),
               onPressed: _isActive ? null : () => _startTimerFromInput(),
-              style: TextButton.styleFrom(
-                backgroundColor: Colors.red,
-                primary: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: Text('Começar', style: TextStyle(fontSize: 16)),
+              color: Colors.transparent,
             ),
-            SizedBox(width: 20),
-            TextButton(
+            SizedBox(width: 2),
+            CupertinoButton(
+              child: Icon(Icons.refresh, color: Colors.white),
               onPressed: _resetTimer,
-              style: TextButton.styleFrom(
-                backgroundColor: Colors.red,
-                primary: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: Text('Resetar', style: TextStyle(fontSize: 16)),
+              color: Colors.transparent,
             ),
           ],
         ),

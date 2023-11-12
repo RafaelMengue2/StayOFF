@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class Task {
   String name;
   String category;
-  DateTime dueDate; // Due date property for the task
+  DateTime dueDate;
 
   Task(this.name, this.category, this.dueDate);
 }
@@ -30,13 +31,14 @@ class _TasksScreenState extends State<TasksScreen> {
   TextEditingController editTaskNameController = TextEditingController();
   TextEditingController searchController = TextEditingController();
   int editingTaskIndex = -1;
-  List<String> categories = ['Todos', 'Trabalho', 'Pessoal', 'Estudos'];
+  List<String> categories = ['Tudo', 'Trabalho', 'Pessoal', 'Estudar'];
   String? selectedCategory;
 
   @override
   void initState() {
     super.initState();
     initPrefs();
+    selectedCategory = 'Tudo';
   }
 
   Future<void> initPrefs() async {
@@ -72,7 +74,13 @@ class _TasksScreenState extends State<TasksScreen> {
       var taskToMark = tasks[index];
       var completedTask = CompletedTask(taskToMark.name, DateTime.now());
       completedTasks.add(completedTask);
-      tasks.removeAt(index);
+      removeTask(index);
+    });
+  }
+
+  void clearCompletedTasks() {
+    setState(() {
+      completedTasks.clear();
       saveTasks();
     });
   }
@@ -113,175 +121,215 @@ class _TasksScreenState extends State<TasksScreen> {
     return tasks
         .where((task) =>
             task.name.toLowerCase().contains(keyword.toLowerCase()) &&
-            (selectedCategory == 'Todos' || task.category == selectedCategory))
+            (selectedCategory == 'Tudo' || task.category == selectedCategory))
         .toList();
   }
 
   @override
   Widget build(BuildContext context) {
     List<Task> filteredTasks = filterTasks(searchController.text);
-
     return Scaffold(
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(
-              'Número de Tarefas: ${filteredTasks.length}',
-              style: TextStyle(fontSize: 16),
+          Container(
+            padding: EdgeInsets.all(16.0),
+            color: Colors.red,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    SizedBox(width: 8.0),
+                    Text(
+                      'Minhas Tarefas',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24.0,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                DropdownButton<String>(
+                  value: selectedCategory,
+                  items: categories.map((String category) {
+                    return DropdownMenuItem<String>(
+                      value: category,
+                      child: Text(
+                        category,
+                        style: TextStyle(color: Colors.black87),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      selectedCategory = newValue;
+                    });
+                  },
+                ),
+              ],
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              controller: searchController,
-              decoration: InputDecoration(
-                labelText: 'Buscar Tarefas',
-                prefixIcon: Icon(Icons.search),
-              ),
-              onChanged: (value) {
-                setState(() {});
-              },
-            ),
-          ),
-          DropdownButton<String>(
-            value: selectedCategory,
-            items: categories.map((String category) {
-              return DropdownMenuItem<String>(
-                value: category,
-                child: Text(category),
-              );
-            }).toList(),
-            onChanged: (String? newValue) {
-              setState(() {
-                selectedCategory = newValue;
-              });
-            },
           ),
           Expanded(
-            child: ListView.builder(
-              itemCount: filteredTasks.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: editingTaskIndex == index
-                      ? TextField(
-                          controller: editTaskNameController,
-                          decoration: InputDecoration(
-                            labelText: 'Editar Tarefa',
+            child: Container(
+              padding: EdgeInsets.all(16.0),
+              child: filteredTasks.isEmpty
+                  ? Center(
+                      child: Text(
+                        'Nenhuma tarefa criada ainda.',
+                        style: TextStyle(fontSize: 18.0),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: filteredTasks.length,
+                      itemBuilder: (context, index) {
+                        return Card(
+                          elevation: 3,
+                          color: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.0),
                           ),
-                        )
-                      : Text(
-                          '${filteredTasks[index].category}: ${filteredTasks[index].name}',
-                        ),
-                  subtitle: Text(
-                    'Data de Vencimento: ${DateFormat('dd/MM/yyyy').format(filteredTasks[index].dueDate.toLocal())}',
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.edit),
-                        onPressed: () {
-                          setState(() {
-                            editingTaskIndex = index;
-                            editTaskNameController.text =
-                                filteredTasks[index].name;
-                          });
-                        },
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.check),
-                        onPressed: () {
-                          markTaskAsCompleted(index);
-                        },
-                      ),
-                      if (editingTaskIndex == index)
-                        IconButton(
-                          icon: Icon(Icons.save),
-                          onPressed: () {
-                            editTask(index, editTaskNameController.text);
-                          },
-                        ),
-                    ],
-                  ),
-                );
-              },
+                          child: ListTile(
+                            title: editingTaskIndex == index
+                                ? TextField(
+                                    controller: editTaskNameController,
+                                    decoration: InputDecoration(
+                                      labelText: 'Editar Tarefa',
+                                    ),
+                                  )
+                                : Text(
+                                    filteredTasks[index].name,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                            subtitle: Text(
+                              'Escolher Data: ${DateFormat('dd/MM/yyyy').format(filteredTasks[index].dueDate.toLocal())}',
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: Icon(Icons.edit),
+                                  onPressed: () {
+                                    setState(() {
+                                      editingTaskIndex = index;
+                                      editTaskNameController.text =
+                                          filteredTasks[index].name;
+                                    });
+                                  },
+                                ),
+                                IconButton(
+                                  icon: Icon(FontAwesomeIcons.check),
+                                  onPressed: () {
+                                    markTaskAsCompleted(index);
+                                  },
+                                ),
+                                if (editingTaskIndex == index)
+                                  IconButton(
+                                    icon: Icon(FontAwesomeIcons.save),
+                                    onPressed: () {
+                                      editTask(
+                                          index, editTaskNameController.text);
+                                    },
+                                  ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
             ),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await showDialog(
-            context: context,
-            builder: (context) {
-              DateTime dueDate = DateTime.now();
-
-              return AlertDialog(
-                title: Text('Adicionar Tarefa'),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    DropdownButton<String>(
-                      value: selectedCategory,
-                      items: categories.map((String category) {
-                        return DropdownMenuItem<String>(
-                          value: category,
-                          child: Text(category),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          selectedCategory = newValue;
-                        });
-                      },
-                    ),
-                    TextField(
-                      controller: taskNameController,
-                      decoration: InputDecoration(labelText: 'Nome da Tarefa:'),
-                    ),
-                    TextButton(
-                      onPressed: () async {
-                        DateTime? selectedDate = await showDatePicker(
-                          context: context,
-                          initialDate: DateTime.now(),
-                          firstDate: DateTime.now(),
-                          lastDate: DateTime(2030),
-                        );
-                        if (selectedDate != null) {
+      floatingActionButton: Container(
+        margin: EdgeInsets.only(bottom: 60.0),
+        child: FloatingActionButton(
+          onPressed: () async {
+            await showDialog(
+              context: context,
+              builder: (context) {
+                DateTime dueDate = DateTime.now();
+                return AlertDialog(
+                  title: Text('Adicionar Tarefa'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      DropdownButton<String>(
+                        value: selectedCategory,
+                        items: categories.map((String category) {
+                          return DropdownMenuItem<String>(
+                            value: category,
+                            child: Text(category),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
                           setState(() {
-                            dueDate = selectedDate;
+                            selectedCategory = newValue;
                           });
+                        },
+                      ),
+                      SizedBox(height: 8.0),
+                      TextFormField(
+                        controller: taskNameController,
+                        decoration: InputDecoration(
+                          labelText: 'Nome da Tarefa:',
+                        ),
+                      ),
+                      SizedBox(height: 8.0),
+                      TextButton(
+                        onPressed: () async {
+                          DateTime? selectedDate = await showDatePicker(
+                            context: context,
+                            initialDate: DateTime.now(),
+                            firstDate: DateTime.now(),
+                            lastDate: DateTime(2030),
+                          );
+                          if (selectedDate != null) {
+                            setState(() {
+                              dueDate = selectedDate;
+                            });
+                          }
+                        },
+                        child: Text('Escolher uma data'),
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: Text('Cancelar'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        String taskName = taskNameController.text;
+                        if (taskName.isNotEmpty) {
+                          addTask(
+                            taskName,
+                            selectedCategory ?? categories[0],
+                            dueDate,
+                          );
+                          Navigator.of(context).pop();
                         }
                       },
-                      child: Text('Definir Data de Vencimento'),
+                      style: ElevatedButton.styleFrom(
+                        primary: Colors.red,
+                        onPrimary: Colors.white,
+                      ),
+                      child: Text('Adicionar'),
                     ),
                   ],
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    child: Text('Cancelar'),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      String taskName = taskNameController.text;
-                      if (taskName.isNotEmpty) {
-                        addTask(taskName, selectedCategory ?? categories[0],
-                            dueDate);
-                        Navigator.of(context).pop();
-                      }
-                    },
-                    child: Text('Adicionar'),
-                  ),
-                ],
-              );
-            },
-          );
-        },
-        child: Icon(Icons.add),
+                );
+              },
+            );
+          },
+          child: Icon(Icons.add),
+          backgroundColor: Colors.red,
+        ),
       ),
     );
   }
@@ -290,5 +338,12 @@ class _TasksScreenState extends State<TasksScreen> {
 void main() {
   runApp(MaterialApp(
     home: TasksScreen(),
+    theme: ThemeData(
+      primaryColor: Colors.red,
+      colorScheme: ColorScheme.fromSwatch(
+        primarySwatch: Colors.blue,
+      ),
+      scaffoldBackgroundColor: Colors.black,
+    ),
   ));
 }
