@@ -5,6 +5,13 @@ import 'note_screen.dart';
 import 'about_screen.dart';
 import 'task_screen.dart';
 
+class Task {
+  String title;
+  bool isCompleted;
+
+  Task(this.title, this.isCompleted);
+}
+
 void main() {
   runApp(ProcrastinationApp());
 }
@@ -102,8 +109,89 @@ class HomeContent extends StatelessWidget {
         ),
       ),
       child: Center(
-        child: PomodoroTimer(),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            PomodoroTimer(),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                _showTaskDialog(context);
+              },
+              child: Text('Selecionar Tarefas'),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => TasksScreen()),
+                );
+              },
+              child: Text('Ir para Tarefas'),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => AboutScreen()),
+                );
+              },
+              child: Text('Ir para Sobre'),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => NoteScreen()),
+                );
+              },
+              child: Text('Ir para Notas'),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  void _showTaskDialog(BuildContext context) {
+    List<Task> tasks = [
+      Task('Tarefa 1', false),
+      Task('Tarefa 2', true),
+      Task('Tarefa 3', false),
+      // Adicione mais tarefas conforme necessário
+    ];
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Tarefas Disponíveis'),
+          content: Column(
+            children: tasks.map((task) {
+              return ListTile(
+                title: Text(task.title),
+                trailing: Checkbox(
+                  value: task.isCompleted,
+                  onChanged: (value) {
+                    // Atualizar o estado da tarefa conforme necessário
+                  },
+                ),
+              );
+            }).toList(),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Fechar'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -125,15 +213,15 @@ class _PomodoroTimerState extends State<PomodoroTimer>
   late AnimationController _animationController;
   late Animation<double> _animation;
 
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: Duration(seconds: _seconds + _minutes * 60),
-    );
-    _animation = Tween<double>(begin: 1, end: 0).animate(_animationController);
-  }
+@override
+void initState() {
+  super.initState();
+  _animationController = AnimationController(
+    vsync: this,
+    duration: Duration(minutes: 25), // Initial work duration
+  );
+  _animation = Tween<double>(begin: 1, end: 0).animate(_animationController);
+}
 
   void _startTimerFromInput() {
     int minutes = int.tryParse(_minutesController.text) ?? 0;
@@ -166,31 +254,34 @@ class _PomodoroTimerState extends State<PomodoroTimer>
     });
   }
 
-  void _startTimer() {
-    if (!_isActive) {
-      _isActive = true;
-      _animationController.reset();
-      _animationController.duration = Duration(seconds: _seconds + _minutes * 60);
-      _animationController.forward();
+void _startTimer() {
+  if (!_isActive) {
+    _isActive = true;
+    _animationController.reset();
+    _animationController.duration = Duration(seconds: _seconds + _minutes * 60);
+    _animationController.forward();
 
-      _timer = Timer.periodic(Duration(seconds: 1), (timer) {
-        if (_minutes == 0 && _seconds == 0) {
-          _timer.cancel();
-          _isActive = false;
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      if (_minutes == 0 && _seconds == 0) {
+        _timer.cancel();
+        _isActive = false;
+        Future.delayed(Duration.zero, () {
           _showEndDialog(context);
-        } else if (_seconds == 0) {
-          setState(() {
-            _minutes--;
-            _seconds = 59;
-          });
-        } else {
-          setState(() {
-            _seconds--;
-          });
-        }
-      });
-    }
+        });
+      } else if (_seconds == 0) {
+        setState(() {
+          _minutes--;
+          _seconds = 59;
+        });
+      } else {
+        setState(() {
+          _seconds--;
+        });
+      }
+    });
   }
+}
+
 
   void _showEndDialog(BuildContext context) {
     showDialog(
