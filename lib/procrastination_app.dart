@@ -8,7 +8,6 @@ import 'task_screen.dart';
 class Task {
   String title;
   bool isCompleted;
-
   Task(this.title, this.isCompleted);
 }
 
@@ -120,36 +119,6 @@ class HomeContent extends StatelessWidget {
               },
               child: Text('Selecionar Tarefas'),
             ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => TasksScreen()),
-                );
-              },
-              child: Text('Ir para Tarefas'),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => AboutScreen()),
-                );
-              },
-              child: Text('Ir para Sobre'),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => NoteScreen()),
-                );
-              },
-              child: Text('Ir para Notas'),
-            ),
           ],
         ),
       ),
@@ -159,7 +128,7 @@ class HomeContent extends StatelessWidget {
   void _showTaskDialog(BuildContext context) {
     List<Task> tasks = [
       Task('Tarefa 1', false),
-      Task('Tarefa 2', true),
+      Task('Tarefa 2', false),
       Task('Tarefa 3', false),
       // Adicione mais tarefas conforme necessário
     ];
@@ -203,7 +172,9 @@ class PomodoroTimer extends StatefulWidget {
 
 class _PomodoroTimerState extends State<PomodoroTimer>
     with SingleTickerProviderStateMixin {
-  int _minutes = 0;
+  int _workMinutes = 25;
+  int _breakMinutes = 5;
+  int _minutes = 25;
   int _seconds = 0;
   bool _isActive = false;
   late Timer _timer;
@@ -213,25 +184,21 @@ class _PomodoroTimerState extends State<PomodoroTimer>
   late AnimationController _animationController;
   late Animation<double> _animation;
 
-@override
-void initState() {
-  super.initState();
-  _animationController = AnimationController(
-    vsync: this,
-    duration: Duration(minutes: 25), // Initial work duration
-  );
-  _animation = Tween<double>(begin: 1, end: 0).animate(_animationController);
-}
+  bool _isBreak = false;
 
-  void _startTimerFromInput() {
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: Duration(minutes: _minutes),
+    );
+    _animation = Tween<double>(begin: 1, end: 0).animate(_animationController);
+  }
+
+ void _startTimerFromInput() {
     int minutes = int.tryParse(_minutesController.text) ?? 0;
     int seconds = int.tryParse(_secondsController.text) ?? 0;
-
-    if (seconds >= 60) {
-      int extraMinutes = seconds ~/ 60;
-      minutes += extraMinutes;
-      seconds %= 60;
-    }
 
     setState(() {
       _minutes = minutes;
@@ -243,7 +210,6 @@ void initState() {
 
   void _resetTimer() {
     _timer.cancel();
-    _animationController.stop();
     _isActive = false;
     _minutesController.clear();
     _secondsController.clear();
@@ -254,34 +220,41 @@ void initState() {
     });
   }
 
-void _startTimer() {
-  if (!_isActive) {
-    _isActive = true;
-    _animationController.reset();
-    _animationController.duration = Duration(seconds: _seconds + _minutes * 60);
-    _animationController.forward();
+  void _startTimer() {
+    if (!_isActive) {
+      _isActive = true;
+      _animationController.reset();
+      _animationController.duration = Duration(seconds: _seconds + _minutes * 60);
+      _animationController.forward();
 
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
-      if (_minutes == 0 && _seconds == 0) {
-        _timer.cancel();
-        _isActive = false;
-        Future.delayed(Duration.zero, () {
-          _showEndDialog(context);
-        });
-      } else if (_seconds == 0) {
-        setState(() {
-          _minutes--;
-          _seconds = 59;
-        });
-      } else {
-        setState(() {
-          _seconds--;
-        });
-      }
-    });
+      _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+        if (_minutes == 0 && _seconds == 0) {
+          _timer.cancel();
+          _isActive = false;
+          Future.delayed(Duration.zero, () {
+            _showEndDialog(context);
+            if (!_isBreak) {
+              _isBreak = true;
+              _minutes = _breakMinutes;
+            } else {
+              _isBreak = false;
+              _minutes = _workMinutes;
+            }
+            _startTimer();
+          });
+        } else if (_seconds == 0) {
+          setState(() {
+            _minutes--;
+            _seconds = 59;
+          });
+        } else {
+          setState(() {
+            _seconds--;
+          });
+        }
+      });
+    }
   }
-}
-
 
   void _showEndDialog(BuildContext context) {
     showDialog(
@@ -348,46 +321,14 @@ void _startTimer() {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            SizedBox(
-              width: 100,
-              child: CupertinoTextField(
-                controller: _minutesController,
-                keyboardType: TextInputType.number,
-                textAlign: TextAlign.center,
-                placeholder: 'Minutos',
-                style: TextStyle(color: Colors.white),
-                placeholderStyle: TextStyle(color: Colors.white),
-                decoration: null,
-              ),
-            ),
-            SizedBox(width: 50),
-            SizedBox(
-              width: 100,
-              child: CupertinoTextField(
-                controller: _secondsController,
-                keyboardType: TextInputType.number,
-                placeholder: 'Segundos',
-                style: TextStyle(color: Colors.white),
-                placeholderStyle: TextStyle(color: Colors.white),
-                decoration: null,
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
             CupertinoButton(
               child: Icon(Icons.play_arrow, color: Colors.white),
               onPressed: _isActive ? null : () => _startTimerFromInput(),
-              color: Colors.transparent,
             ),
-            SizedBox(width: 2),
+            SizedBox(width: 20),
             CupertinoButton(
-              child: Icon(Icons.refresh, color: Colors.white),
-              onPressed: _resetTimer,
-              color: Colors.transparent,
+              child: Icon(Icons.stop, color: Colors.white),
+              onPressed: _isActive ? () => _resetTimer() : null,
             ),
           ],
         ),

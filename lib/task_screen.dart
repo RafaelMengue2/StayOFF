@@ -18,7 +18,11 @@ class CompletedTask {
   CompletedTask(this.name, this.completionTime);
 }
 
+typedef TaskCallback = void Function(List<Task>);
+
 class TasksScreen extends StatefulWidget {
+  TasksScreen();
+
   @override
   _TasksScreenState createState() => _TasksScreenState();
 }
@@ -333,17 +337,4 @@ class _TasksScreenState extends State<TasksScreen> {
       ),
     );
   }
-}
-
-void main() {
-  runApp(MaterialApp(
-    home: TasksScreen(),
-    theme: ThemeData(
-      primaryColor: Colors.red,
-      colorScheme: ColorScheme.fromSwatch(
-        primarySwatch: Colors.blue,
-      ),
-      scaffoldBackgroundColor: Colors.black,
-    ),
-  ));
 }
